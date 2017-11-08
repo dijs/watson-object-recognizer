@@ -62,8 +62,8 @@ const trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, l2_decay:0.00
 
 (async function () {
   console.log('Training...');
-  const timeSum = 0;
-  const index = 0;
+  let timeSum = 0;
+  let index = 0;
   
   for (const filename of images) {
     const started = Date.now();
