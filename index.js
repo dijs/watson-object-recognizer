@@ -62,9 +62,19 @@ const trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, l2_decay:0.00
 
 (async function () {
   console.log('Training...');
+  const timeSum = 0;
+  const index = 0;
+  
   for (const filename of images) {
+    const started = Date.now();
     const x = await imageToVol(join(pathToTrainingData, filename));
     trainer.train(x, labels.indexOf(getLabel(filename)));
+    const took = Date.now() - started;
+    timeSum += took;
+    index++;
+    const average = timeSum / index / 1000;
+    const left = (image.length - index) * average;
+    console.log('Average training time', average.toFixed(2), 'Estimated Left', left.toFixed(2));
   }
   
   console.log('Saving network');
