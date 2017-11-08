@@ -21,6 +21,15 @@ function getImageInfo(filename) {
   };
 }
 
+function getTrainingImage(path) {
+  const { x, y, w, h } = getImageInfo(basename(path));
+  return jimp.read(path).then(image => {
+    return image
+      .crop(x, y, w, h)
+      .contain(size, size);
+  });
+}
+
 function writeTrainingImage(filename) {
   const { tag, age, x, y, w, h } = getImageInfo(filename);
   return jimp.read(join(pathToTagged, filename)).then(image => {
@@ -30,6 +39,8 @@ function writeTrainingImage(filename) {
       .write(join(pathToTrainingData, `${tag}_${age}.jpg`));
   });
 }
+
+module.exports = getTrainingImage;
 
 const taggedFiles = fs.readdirSync('../watson-sight/tagged');
 Promise.all(taggedFiles.map(writeTrainingImage)).then(() => console.log('done'));

@@ -3,9 +3,9 @@ const jimp = require('jimp');
 const fs = require('fs');
 const join = require('path').join;
 const maxBy = require('lodash/maxBy');
+const getTrainingImage = require('./normalizer');
 
-async function imageToVol(path) {
-  const image = await jimp.read(path);
+function imageToVol(image) {
   var p = image.bitmap.data;
   var pv = []
   for(var i=0;i<p.length;i++) {
@@ -32,14 +32,21 @@ const networkData = JSON.parse(fs.readFileSync('./networks/1510143349594.json', 
 const net = new convnetjs.Net();
 net.fromJSON(networkData);
 
-const filename = process.argv[2];
-console.log('Trying to recognize', filename);
+// Full captured image
+function recognize(path) {
+  return getTrainingImage(path).then(imageToVol).then(vol => {
+    const results = net.forward(vol).w;
+    const score = Math.max(...results);
+    const guess = labels[results.indexOf(score)];
+    return {
+      guess,
+      score
+    };
+  });  
+};
 
-(async function () {
-  const vol = await imageToVol(join(pathToTrainingData, filename));
-  const results = net.forward(vol).w;
-  const bestGuessScore = Math.max(...results);
-  const bestGuess = labels[results.indexOf(bestGuessScore)];
-  console.log('Guessing this is', bestGuess);
-  console.log('With propability', Math.round(bestGuessScore * 100) + '%');
-})();
+const path = process.argv[2];
+console.log('Trying to recognize', path);
+recognize(path).then(console.log);
+
+module.exports = recognize;
