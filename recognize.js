@@ -28,25 +28,27 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 
 console.log('Possible Labels', labels);
 
-const networkData = JSON.parse(fs.readFileSync('./networks/1510143349594.json', 'utf8'));
+const networkData = JSON.parse(fs.readFileSync('./networks/1510151369066.json', 'utf8'));
 const net = new convnetjs.Net();
 net.fromJSON(networkData);
 
 // Full captured image
 function recognize(path) {
-  return getTrainingImage(path).then(imageToVol).then(vol => {
-    const results = net.forward(vol).w;
-    const score = Math.max(...results);
-    const guess = labels[results.indexOf(score)];
-    return {
-      guess,
-      score
-    };
-  });  
+  return getTrainingImage(path)
+    .then(imageToVol)
+    .then(vol => {
+      const results = net.forward(vol).w;
+      const score = Math.max(...results);
+      const guess = labels[results.indexOf(score)];
+      return {
+        guess,
+        score
+      };
+    });
 };
 
 const path = process.argv[2];
 console.log('Trying to recognize', path);
-recognize(path).then(console.log);
+recognize(path).then(console.log).catch(console.error);
 
 module.exports = recognize;

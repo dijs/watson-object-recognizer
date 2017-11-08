@@ -23,10 +23,14 @@ function getImageInfo(filename) {
 
 function getTrainingImage(path) {
   const { x, y, w, h } = getImageInfo(basename(path));
-  return jimp.read(path).then(image => {
-    return image
-      .crop(x, y, w, h)
-      .contain(size, size);
+  return new Promise(resolve => {
+    jimp.read(path).then(image => {
+      return image
+        .crop(x, y, w, h)
+        .contain(size, size, (err, newImage) => {
+          resolve(newImage);
+        });
+    });
   });
 }
 
@@ -42,5 +46,7 @@ function writeTrainingImage(filename) {
 
 module.exports = getTrainingImage;
 
-const taggedFiles = fs.readdirSync('../watson-sight/tagged');
-Promise.all(taggedFiles.map(writeTrainingImage)).then(() => console.log('done'));
+if (require.main === module) {
+  const taggedFiles = fs.readdirSync('../watson-sight/tagged');
+  Promise.all(taggedFiles.map(writeTrainingImage)).then(() => console.log('done'));
+}

@@ -26,10 +26,10 @@ const createNetwork = labels => {
   // output Vol is of size 4x4x20 here
   layer_defs.push({type:'softmax', num_classes: labels.length});
   // output Vol is of size 1x1x10 here
-  
+
   const net = new convnetjs.Net();
   net.makeLayers(layer_defs);
-  
+
   return net;
 }
 
@@ -58,29 +58,43 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 console.log('Labels', labels);
 
 const net = createNetwork(labels);
-const trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, l2_decay:0.001});
+const trainer = new convnetjs.SGDTrainer(net, {
+  method: 'adadelta',
+  batch_size: 10,
+  l2_decay: 0.001
+});
 
 (async function () {
-  console.log('Training...');
+  console.log('Getting ready to train', images.length, 'images');
   let timeSum = 0;
-  let index = 0;
-  
-  for (const filename of images) {
+  let xLossSum = 0;
+  let runs = 2000;
+
+  for (let index = 0; index < runs; index++) {
+    const randomFilename = images[Math.floor(Math.random() * images.length)];
+    const label = getLabel(randomFilename);
+    const labelIndex = labels.indexOf(label);
     const started = Date.now();
-    const x = await imageToVol(join(pathToTrainingData, filename));
-    trainer.train(x, labels.indexOf(getLabel(filename)));
+    const x = await imageToVol(join(pathToTrainingData, randomFilename));
+    const stats = trainer.train(x, labelIndex);
+    const lossX = stats.cost_loss;
+    xLossSum += lossX;
+    const lossW = stats.l2_decay_loss;
     const took = Date.now() - started;
     timeSum += took;
-    index++;
-    const average = timeSum / index / 1000;
-    const left = (images.length - index) * average;
-    console.log('Average training time', average.toFixed(2), 'Estimated Left', left.toFixed(2));
+    const num = index + 1;
+    const averageTrainingTime = timeSum / num / 1000;
+    const averageLossX = xLossSum / num;
+    const left = (runs - num) * averageTrainingTime;
+    const data = [
+      'Labels', label, labelIndex,
+      'Loss', averageLossX.toFixed(3), lossW.toFixed(3),
+      'Train Time', averageTrainingTime.toFixed(2),
+      'Est Left', left.toFixed(2)
+    ].map(s => (s + '').padStart(10));
+    console.log(...data);
   }
-  
+
   console.log('Saving network');
   fs.writeFileSync(`./networks/${Date.now()}.json`, JSON.stringify(net.toJSON()));
-  
-  console.log('Testing...' + images[0]);
-  const t = await imageToVol(join(pathToTrainingData, images[0]));
-  console.log('Results', net.forward(t));
 })();
