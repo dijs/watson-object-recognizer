@@ -38,8 +38,8 @@ console.log('Trying to recognize', filename);
 (async function () {
   const vol = await imageToVol(join(pathToTrainingData, filename));
   const results = net.forward(vol).w;
-  const bestGuess = maxBy(labels, (label, index) => results[index]);
   const bestGuessScore = Math.max(...results);
+  const bestGuess = labels[results.indexOf(bestGuessScore)];
   console.log('Guessing this is', bestGuess);
   console.log('With propability', Math.round(bestGuessScore * 100) + '%');
 })();

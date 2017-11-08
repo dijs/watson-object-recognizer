@@ -2,3 +2,4 @@ node_modules/
 training-data/
 .DS_Store
 networks/
+package-lock.json
