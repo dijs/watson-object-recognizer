@@ -73,7 +73,7 @@ const trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, l2_decay:0.00
     timeSum += took;
     index++;
     const average = timeSum / index / 1000;
-    const left = (image.length - index) * average;
+    const left = (images.length - index) * average;
     console.log('Average training time', average.toFixed(2), 'Estimated Left', left.toFixed(2));
   }
   
