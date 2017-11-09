@@ -23,14 +23,15 @@ function getImageInfo(filename) {
 
 function getTrainingImage(path) {
   const { x, y, w, h } = getImageInfo(basename(path));
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     jimp.read(path).then(image => {
       return image
         .crop(x, y, w, h)
         .contain(size, size, (err, newImage) => {
+          if (err) return reject(err);
           resolve(newImage);
         });
-    });
+    }).catch(err => reject(err));
   });
 }
 

@@ -16,7 +16,7 @@ function imageToVol(image) {
   return x;
 }
 
-const pathToTrainingData = './training-data';
+const pathToTrainingData = join(__dirname, 'training-data');
 const images = fs
   .readdirSync(pathToTrainingData)
   .filter(name => name.indexOf('.') !== 0);
@@ -28,7 +28,7 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 
 console.log('Possible Labels', labels);
 
-const networkData = JSON.parse(fs.readFileSync('./networks/1510151369066.json', 'utf8'));
+const networkData = JSON.parse(fs.readFileSync(join(__dirname, 'networks/1510154893606.json'), 'utf8'));
 const net = new convnetjs.Net();
 net.fromJSON(networkData);
 
@@ -47,8 +47,8 @@ function recognize(path) {
     });
 };
 
-const path = process.argv[2];
-console.log('Trying to recognize', path);
-recognize(path).then(console.log).catch(console.error);
+// const path = process.argv[2];
+// console.log('Trying to recognize', path);
+// recognize(path).then(console.log).catch(console.error);
 
 module.exports = recognize;

@@ -57,7 +57,14 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 
 console.log('Labels', labels);
 
-const net = createNetwork(labels);
+// Load network
+const networkData = JSON.parse(fs.readFileSync('./networks/1510153941998.json', 'utf8'));
+const net = new convnetjs.Net();
+net.fromJSON(networkData);
+
+// Create new
+// const net = createNetwork(labels);
+
 const trainer = new convnetjs.SGDTrainer(net, {
   method: 'adadelta',
   batch_size: 10,
