@@ -28,7 +28,7 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 
 console.log('Possible Labels', labels);
 
-const networkData = JSON.parse(fs.readFileSync(join(__dirname, 'networks/1510154893606.json'), 'utf8'));
+const networkData = JSON.parse(fs.readFileSync(join(__dirname, 'networks/1511487456787.json'), 'utf8'));
 const net = new convnetjs.Net();
 net.fromJSON(networkData);
 

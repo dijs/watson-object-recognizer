@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const pathToTagged = '../watson-sight/tagged';
 const pathToTrainingData = './training-data';
-const size = 64;
+const size = 128;
 
 function getImageInfo(filename) {
   const [tag, timestamp, left, right, top, bottom] = basename(filename, '.png').split('_');
@@ -41,13 +41,41 @@ function writeTrainingImage(filename) {
     return image
       .crop(x, y, w, h)
       .contain(size, size)
-      .write(join(pathToTrainingData, `${tag}_${age}.jpg`));
+      .write(join(pathToTrainingData, `${tag}_${age}.jpg`))
+      .flip(true, false)
+      .write(join(pathToTrainingData, `${tag}_${age}_flipped.jpg`));
   });
 }
 
 module.exports = getTrainingImage;
 
 if (require.main === module) {
-  const taggedFiles = fs.readdirSync('../watson-sight/tagged');
-  Promise.all(taggedFiles.map(writeTrainingImage)).then(() => console.log('done'));
+  const taggedFiles = fs
+    .readdirSync('../watson-sight/tagged')
+    .filter(name => name.indexOf('.') !== 0);
+  (async function () {
+    console.log('Getting ready to train', taggedFiles.length, 'images');
+    let timeSum = 0;
+    for (let index = 0; index < taggedFiles.length; index++) {
+      const started = Date.now();
+      const filename = taggedFiles[index];
+      try {
+        await writeTrainingImage(filename);
+      } catch (e) {
+        console.log(filename, e.message);
+        continue;
+      }
+      const took = Date.now() - started;
+      timeSum += took;
+      const num = index + 1;
+      const averageTrainingTime = timeSum / num / 1000;
+      const left = (taggedFiles.length - num) * averageTrainingTime;
+      const data = [
+        'Train Time', averageTrainingTime.toFixed(2),
+        'Est Left', left.toFixed(2)
+      ].map(s => (s + '').padStart(10));
+      console.log(...data);
+    }
+  })();
+
 }

@@ -2,13 +2,16 @@ const convnetjs = require("convnetjs");
 const jimp = require('jimp');
 const fs = require('fs');
 const join = require('path').join;
+const log = require('single-line-log').stdout;
+
+const size = 128;
 
 // If this works even slightly well, break everything out into modules and organize
 
 // a small Convolutional Neural Network if you wish to predict on images:
 const createNetwork = labels => {
   const layer_defs = [];
-  layer_defs.push({type:'input', out_sx:64, out_sy:64, out_depth:3}); // declare size of input
+  layer_defs.push({type:'input', out_sx: size, out_sy: size, out_depth:3}); // declare size of input
   // output Vol is of size 32x32x3 here
   layer_defs.push({type:'conv', sx:5, filters:16, stride:1, pad:2, activation:'relu'});
   // the layer will perform convolution with 16 kernels, each of size 5x5.
@@ -58,7 +61,7 @@ const labels = Object.keys(images.reduce(byFindingLabels, {}));
 console.log('Labels', labels);
 
 // Load network
-const networkData = JSON.parse(fs.readFileSync('./networks/1510153941998.json', 'utf8'));
+const networkData = JSON.parse(fs.readFileSync('./networks/1511487456787.json', 'utf8'));
 const net = new convnetjs.Net();
 net.fromJSON(networkData);
 
@@ -66,16 +69,20 @@ net.fromJSON(networkData);
 // const net = createNetwork(labels);
 
 const trainer = new convnetjs.SGDTrainer(net, {
-  method: 'adadelta',
-  batch_size: 10,
-  l2_decay: 0.001
+  method: 'adagrad',
+  // controls how accurate the gradient steps of your network will be 1-100
+  batch_size: 1,
+  // decrease if your network is doing well and you want to generalize
+  l2_decay: 0.1
 });
+
+// 1hr mins per 2000 on size 128
+const runs = 1000;
 
 (async function () {
   console.log('Getting ready to train', images.length, 'images');
   let timeSum = 0;
   let xLossSum = 0;
-  let runs = 2000;
 
   for (let index = 0; index < runs; index++) {
     const randomFilename = images[Math.floor(Math.random() * images.length)];
@@ -85,6 +92,9 @@ const trainer = new convnetjs.SGDTrainer(net, {
     const x = await imageToVol(join(pathToTrainingData, randomFilename));
     const stats = trainer.train(x, labelIndex);
     const lossX = stats.cost_loss;
+    if (isNaN(lossX)) {
+      return lossX;
+    }
     xLossSum += lossX;
     const lossW = stats.l2_decay_loss;
     const took = Date.now() - started;
@@ -94,12 +104,12 @@ const trainer = new convnetjs.SGDTrainer(net, {
     const averageLossX = xLossSum / num;
     const left = (runs - num) * averageTrainingTime;
     const data = [
-      'Labels', label, labelIndex,
+      label,
       'Loss', averageLossX.toFixed(3), lossW.toFixed(3),
       'Train Time', averageTrainingTime.toFixed(2),
-      'Est Left', left.toFixed(2)
+      'Est Min Left', (left / 60).toFixed(2)
     ].map(s => (s + '').padStart(10));
-    console.log(...data);
+    log(...data);
   }
 
   console.log('Saving network');
